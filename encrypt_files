@@ -1,0 +1,58 @@
+#! /usr/bin/python
+
+# Written by Abeer Javed 03/19/2015, Rice University
+# Has not been tested on Windows systems.
+# Requires 7z be installed, which is in p7zip-full package.
+
+# Example input: encrypt_files -o sensitive_info -i recipes.pdf kill_list.docx
+# Creates a password protected 7z file with name 'sensitive_info' containing
+# files/directories specified after '-i'.
+# Currently, files/directory paths must be specified in relation to the current
+# directory (e.g. using ../../ etc.).
+
+import sys
+import platform
+from subprocess import call as check_exists
+from os import system as bash_call
+from os import getcwd as get_dir
+
+if __name__ == '__main__':
+
+    # Check is 7z is installed
+    cmd = 'where' if platform.system() == 'Windows' else 'which'
+    if check_exists([cmd, '7z']):
+        exit('Could not locate 7z. Install via call to ' \
+             '"sudo apt-get install p7zip-full"') 
+
+    # Parse script arguments
+    input_files = ''
+    output_file = ''
+
+    current_dir = get_dir()
+
+    try:
+        i = 0
+        while i < len(sys.argv):
+            if sys.argv[i] == '-o':
+                output_file = current_dir + '/' + sys.argv[i+1] + '.7z'
+                i += 2
+            elif sys.argv[i] == '-i':
+                i += 1
+                while i < len(sys.argv) and sys.argv[i] != '-o':
+                    input_files = input_files + current_dir + '/' \
+                                  + sys.argv[i] + ' '
+                    i += 1
+            else:
+                i += 1
+    except:
+        exit('Input error. Example input: encrypt_files -o sensitive_info' \
+             '-i recipes.pdf kill_list.docx')
+
+    if (input_files == '' or output_file == ''):
+        exit('Input error. Example input: encrypt_files -o sensitive_info ' \
+             '-i recipes.pdf kill_list.docx')
+
+    cmd = '7z a -p -t7z -mx0 -mhe=on ' + output_file + ' ' + input_files
+
+    # Run 7z with arguments
+    bash_call(cmd)
